@@ -6,6 +6,6 @@ This will not work if you copy paste this, you'll have to go through gdrive (goo
 then after getting the appropriate credentials and gdrive set up this will work
 
 Download the [binary](https://github.com/glotlabs/gdrive?tab=readme-ov-file) or sudo pacman -S gdrive or something 
-Refer this doc for gdrive setup [doc](https://github.com/glotlabs/gdrive/blob/main/docs/create_google_api_credentials.md)
+Refer this [doc](https://github.com/glotlabs/gdrive/blob/main/docs/create_google_api_credentials.md) for gdrive setup
 
 thx bye
