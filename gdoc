@@ -7,19 +7,18 @@ dict_file="/home/esh/script/file_id_dict.txt"
 touch "$dict_file"
 
 # Check if a filename and document type are provided
-if [ -z "$1" ] || [ -z "$2" ]; then
-    echo "Usage: $0 -d|-s|-e <filename>"
-    exit 1
+if [ -z "$1" ]; then
+  echo -e "Usage: $0 \n <filename.file_type>"
+  exit 1
 fi
 
 # Get the document type and filename
-DOCUMENT_TYPE="$1"
-FILE_PATH="$2"
+FILE_PATH="$1"
 
 # Check if the file exists
 if [ ! -f "$FILE_PATH" ]; then
-    echo "File not found: $FILE_PATH"
-    exit 1
+  echo "File not found: $FILE_PATH"
+  exit 1
 fi
 
 # Generate a unique hash for the file based on its content
@@ -27,12 +26,12 @@ FILE_HASH=$(sha256sum "$FILE_PATH" | awk '{print $1}')
 
 # Function to fetch file ID from the dictionary file
 get_file_id_from_dict() {
-    grep -E "^$1:" "$dict_file" | cut -d ':' -f 2
+  grep -E "^$1:" "$dict_file" | cut -d ':' -f 2
 }
 
 # Function to add a new entry to the dictionary file
 add_to_dict() {
-    echo "$1:$2" >> "$dict_file"
+  echo "$1" >>"$dict_file"
 }
 
 # Try to get the file ID from the dictionary using the file hash
@@ -40,36 +39,39 @@ FILE_ID=$(get_file_id_from_dict "$FILE_HASH")
 
 # If the file ID is not found, upload the file and update the dictionary
 if [ -z "$FILE_ID" ]; then
-    echo "File ID not found in dictionary. Uploading file..."
-    FILE_ID=$(gdrive files upload "$FILE_PATH" | grep -o 'Id: [a-zA-Z0-9_-]*' | cut -d ' ' -f 2)
+  echo "File ID not found in dictionary. Uploading file..."
+  FILE_ID=$(gdrive files upload "$FILE_PATH" | grep -o 'Id: [a-zA-Z0-9_-]*' | cut -d ' ' -f 2)
 
-    if [ -z "$FILE_ID" ]; then
-        echo "Failed to upload file."
-        exit 1
-    fi
+  if [ -z "$FILE_ID" ]; then
+    echo "Failed to upload file."
+    exit 1
+  fi
 
-    # Add the new entry to the dictionary using the file hash
-    add_to_dict "$FILE_HASH" "$FILE_ID"
-    echo "File uploaded and dictionary updated."
+  # Add the new entry to the dictionary using the file hash
+  add_to_dict "$FILE_HASH" "$FILE_ID"
+  echo "File uploaded and dictionary updated."
 else
-    echo "File ID found in dictionary."
+  echo "File ID found in dictionary."
 fi
 
 # Generate the appropriate URL based on document type
-if [ "$DOCUMENT_TYPE" == "-d" ]; then
-    # Google Docs URL
-    URL="https://docs.google.com/document/d/$FILE_ID/edit"
-elif [ "$DOCUMENT_TYPE" == "-s" ]; then
-    # Google Slides URL
-    URL="https://docs.google.com/presentation/d/$FILE_ID/edit"
-elif [ "$DOCUMENT_TYPE" == "-e" ]; then
-    # Google Sheets URL
-    URL="https://docs.google.com/spreadsheets/d/$FILE_ID/edit"
+doc_type=$(echo $FILE_PATH | rev)
+doc_type=$(echo $doc_type | cut -d'.' -f1)
+DOCUMENT_TYPE=$(echo $doc_type | rev)
+
+if [ "$DOCUMENT_TYPE" == "docx" ] || [ $DOCUMENT_TYPE == "doc" ]; then
+  #   # Google Docs URL
+  URL="https://docs.google.com/document/d/$FILE_ID/edit"
+elif [ "$DOCUMENT_TYPE" == "pptx" ] || [ "$DOCUMENT_TYPE" == "ppt" ]; then
+  #   # Google Slides URL
+  URL="https://docs.google.com/presentation/d/$FILE_ID/edit"
+elif [ "$DOCUMENT_TYPE" == "xlsx" ] || [ "$DOCUMENT_TYPE" == "xlsm" ]; then
+  #   # Google Sheets URL
+  URL="https://docs.google.com/spreadsheets/d/$FILE_ID/edit"
 else
-    echo "Invalid document type. Use -d for Google Docs or -s for Google Slides."
-    exit 1
+  echo "Invalid document type. File Extention not know try changing it into [docx,doc,pptx,ppt,xlsx,xlsm]"
+  exit 1
 fi
-
-# Open the generated URL in the default browser
+#
+# # Open the generated URL in the default browser
 xdg-open "$URL"
-
